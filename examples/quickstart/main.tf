@@ -4,12 +4,12 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = ">= 3.102.0"
+      version = ">= 4.8"
     }
   }
   backend "local" {}
 
-  required_version = ">= 1.3"
+  required_version = ">= 1.9"
 }
 
 # Provider configuration
