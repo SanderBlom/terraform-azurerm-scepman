@@ -28,6 +28,14 @@ Visit [containers.dev](https://containers.dev) for more information
 
 - You can use local Terraform state for demo purposes
 - We recommend to [Store Terraform state in Azure Storage](https://learn.microsoft.com/en-us/azure/developer/terraform/store-state-in-azure-storage?tabs=azure-cli) for your Production environment
+
+## Security defaults
+
+- Storage account public network access and shared key authorization are disabled out of the box.
+- A storage account SAS expiration policy defaults to 24 hours and can be adjusted through `storage_account_sas_expiration_period`.
+- Optional inputs allow enabling trusted Microsoft services or soft-delete retention when required.
+- Because shared keys are disabled, Terraform must use Azure AD for all storage data plane operations. Set `storage_use_azuread = true` in your provider configuration (or export `ARM_STORAGE_USE_AZUREAD=true`) and assign your deployment principal the roles `Storage Queue Data Contributor` and `Storage Table Data Contributor` on the storage account.
+
 <!-- BEGIN_TF_DOCS -->
 
 
@@ -56,7 +64,9 @@ terraform {
 
 provider "azurerm" {
   features {}
-  partner_id = "a262352f-52a9-4ed9-a9ba-6a2b2478d19b"
+  storage_use_azuread = true
+  partner_id          = "a262352f-52a9-4ed9-a9ba-6a2b2478d19b"
+  subscription_id     = var.subscription_id
 }
 
 # Resources
@@ -76,21 +86,24 @@ module "scepman" {
   source = "scepman/scepman/azurerm"
   # version = "0.1.0"
 
-
+  organization_name   = var.organization_name
   resource_group_name = azurerm_resource_group.rg.name
   location            = var.location
 
-  storage_account_name = var.storage_account_name
-  key_vault_name       = var.key_vault_name
-  law_name             = var.law_name
+  storage_account_name                     = var.storage_account_name
+  key_vault_name                           = var.key_vault_name
+  law_name                                 = var.law_name
+  storage_account_managed_identity_enabled = var.storage_account_managed_identity_enabled
 
-  service_plan_os_type                = "Windows"
+  service_plan_os_type                = var.service_plan_os_type
   service_plan_name                   = var.service_plan_name
   app_service_name_primary            = var.app_service_name_primary
   app_service_name_certificate_master = var.app_service_name_certificate_master
 
   app_settings_primary            = var.app_settings_primary
   app_settings_certificate_master = var.app_settings_certificate_master
+
+  enable_application_insights = var.enable_application_insights
 
   tags = var.tags
 }
@@ -133,8 +146,17 @@ When you supply `law_cross_subscription_details`, omit both `law_name` and `law_
 | <a name="input_service_plan_os_type"></a> [service\_plan\_os\_type](#input\_service\_plan\_os\_type)                                                              | OS of the service plan. Either "Windows" or "Linux"                                                   | `string`      | `Windows`                                                                                                  |    no    |
 | <a name="input_service_plan_sku"></a> [service\_plan\_sku](#input\_service\_plan\_sku)                                                              | SKU of the service plan                                                   | `string`      | `S1`                                                                                                  |    no    |
 | <a name="input_service_plan_resource_id"></a> [service\_plan\_resource\_id](#input\_service\_plan\_resource\_id)                                    | Resource ID of the service plan                                           | `string`      | `null`                                                                                                |    no    |
-| <a name="input_storage_account_name"></a> [storage\_account\_name](#input\_storage\_account\_name)                                                  | Name of the storage account                                               | `string`      | n/a                                                                                                   |   yes    |
-| <a name="input_storage_account_replication_type"></a> [storage\_account\_replication\_type](#input\_storage\_account\_replication\_type)           | Storage account replication type. Valid options are LRS, ZRS, GRS, RAGRS, GZRS, RAGZRS. | `string`      | `LRS`                                                                                                 |    no    |
+| <a name="input_storage_account_allow_nested_items_to_be_public"></a> [storage\_account\_allow\_nested\_items\_to\_be\_public](#input\_storage\_account\_allow\_nested\_items\_to\_be\_public) | Allow nested items (containers/directories) to inherit public access. | `bool` | `false` | no |
+| <a name="input_storage_account_blob_soft_delete_retention_days"></a> [storage\_account\_blob\_soft\_delete\_retention\_days](#input\_storage\_account\_blob\_soft\_delete\_retention\_days) | Retention in days for blob soft delete. Set to 0 to keep soft delete disabled. | `number` | `7` | no |
+| <a name="input_storage_account_container_soft_delete_retention_days"></a> [storage\_account\_container\_soft\_delete\_retention\_days](#input\_storage\_account\_container\_soft\_delete\_retention\_days) | Retention in days for container soft delete. Set to 0 to keep soft delete disabled. | `number` | `7` | no |
+| <a name="input_storage_account_managed_identity_enabled"></a> [storage\_account\_managed\_identity\_enabled](#input\_storage\_account\_managed\_identity\_enabled) | Assign a system managed identity to the storage account to support Customer Managed Keys. | `bool` | `false` | no |
+| <a name="input_storage_account_min_tls_version"></a> [storage\_account\_min\_tls\_version](#input\_storage\_account\_min\_tls\_version) | Minimum TLS version for the storage account endpoint. | `string` | `"TLS1_2"` | no |
+| <a name="input_storage_account_name"></a> [storage\_account\_name](#input\_storage\_account\_name) | Name of the storage account | `string` | n/a | yes |
+| <a name="input_storage_account_public_network_access_enabled"></a> [storage\_account\_public\_network\_access\_enabled](#input\_storage\_account\_public\_network\_access\_enabled) | Allow public network access to the storage account. Default disables external access to rely on private endpoints. | `bool` | `false` | no |
+| <a name="input_storage_account_replication_type"></a> [storage\_account\_replication\_type](#input\_storage\_account\_replication\_type) | Storage account replication type. Valid options are LRS, ZRS, GRS, RAGRS, GZRS, RAGZRS. | `string` | `"LRS"` | no |
+| <a name="input_storage_account_sas_expiration_period"></a> [storage\_account\_sas\_expiration\_period](#input\_storage\_account\_sas\_expiration\_period) | Default expiration period applied to user delegation and service SAS tokens in d.hh:mm:ss format. | `string` | `"1.00:00:00"` | no |
+| <a name="input_storage_account_shared_access_key_enabled"></a> [storage\_account\_shared\_access\_key\_enabled](#input\_storage\_account\_shared\_access\_key\_enabled) | Enable shared access key authentication for the storage account. Default is false to enforce more secure authentication methods. | `bool` | `false` | no |
+| <a name="input_storage_account_trusted_services_enabled"></a> [storage\_account\_trusted\_services\_enabled](#input\_storage\_account\_trusted\_services\_enabled) | Enable trusted Microsoft services to bypass storage account network rules. | `bool` | `false` | no |
 | <a name="input_organization_name"></a> [organization\_name](#input\organization\_name)                                                              | Your organization name presented in the O= field of the root certificate  | `string`      | `my-org`                                                                                              |    no    |
 | <a name="input_key_vault_use_rbac"></a> [key\_vault\_use\_rbac](#input\_key\_vault\_use\_rbac)                                                        | Use RBAC for the key vault or the older access policies                   | `bool`        | `true`                                                                                                |    no    |
 | <a name="input_tags"></a> [tags](#input\_tags)                                                                                                      | A mapping of tags to assign to the resource                               | `map(string)` | `{}`                                                                                                  |    no    |
@@ -154,8 +176,11 @@ When you supply `law_cross_subscription_details`, omit both `law_name` and `law_
 
 ## Outputs
 
-| Name                                                                                                                                 | Description                    |
-| ------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------ |
+| Name | Description |
+|------|-------------|
 | <a name="output_scepman_certificate_master_url"></a> [scepman\_certificate\_master\_url](#output\_scepman\_certificate\_master\_url) | SCEPman Certificate Master Url |
-| <a name="output_scepman_url"></a> [scepman\_url](#output\_scepman\_url)                                                              | SCEPman Url                    |
+| <a name="output_scepman_url"></a> [scepman\_url](#output\_scepman\_url) | SCEPman Url |
+| <a name="output_storage_account_id"></a> [storage\_account\_id](#output\_storage\_account\_id) | ID of the storage account used by the deployment. |
+| <a name="output_storage_account_identity_principal_id"></a> [storage\_account\_identity\_principal\_id](#output\_storage\_account\_identity\_principal\_id) | Principal ID of the storage account system-assigned managed identity when enabled. |
+| <a name="output_storage_account_identity_tenant_id"></a> [storage\_account\_identity\_tenant\_id](#output\_storage\_account\_identity\_tenant\_id) | Tenant ID of the storage account system-assigned managed identity when enabled. |
 <!-- END_TF_DOCS -->

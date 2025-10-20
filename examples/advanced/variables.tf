@@ -24,8 +24,63 @@ variable "storage_account_name" {
   description = "Name of the storage account"
 }
 
+variable "storage_account_public_network_access_enabled" {
+  type        = bool
+  default     = false
+  description = "Allow public network access to the storage account."
+}
+
+variable "storage_account_trusted_services_enabled" {
+  type        = bool
+  default     = false
+  description = "Enable trusted Microsoft services to bypass storage account network rules."
+}
+
+variable "storage_account_min_tls_version" {
+  type        = string
+  default     = "TLS1_2"
+  description = "Minimum TLS version for the storage account endpoint."
+}
+
+variable "storage_account_shared_access_key_enabled" {
+  type        = bool
+  default     = false
+  description = "Enable shared access key authentication for the storage account. Default is false to enforce more secure authentication methods."
+}
+
+variable "storage_account_allow_nested_items_to_be_public" {
+  type        = bool
+  default     = false
+  description = "Allow nested items (containers) to inherit public access."
+}
+
+variable "storage_account_sas_expiration_period" {
+  type        = string
+  default     = "1.00:00:00"
+  description = "Expiration period applied to SAS tokens in d.hh:mm:ss format."
+}
+
+variable "storage_account_blob_soft_delete_retention_days" {
+  type        = number
+  default     = 7
+  description = "Retention in days for blob soft delete. Set to 0 to keep soft delete disabled."
+}
+
+variable "storage_account_container_soft_delete_retention_days" {
+  type        = number
+  default     = 7
+  description = "Retention in days for container soft delete. Set to 0 to keep soft delete disabled."
+}
+
+variable "storage_account_managed_identity_enabled" {
+  type        = bool
+  default     = false
+  description = "Assign a system managed identity to the storage account for Customer Managed Keys."
+}
+
 variable "law_name" {
   type        = string
+  default     = null
   description = "Name for the Log Analytics Workspace"
 }
 
@@ -33,6 +88,37 @@ variable "law_resource_group_name" {
   type        = string
   default     = null
   description = "Ressource Group of existing Log Analytics Workspace"
+}
+
+variable "law_cross_subscription_details" {
+  type = object({
+    id           = string
+    workspace_id = string
+    shared_key   = string
+  })
+  default     = null
+  nullable    = true
+  description = "Used to reference an existing Log Analytics Workspace located in another subscription. Use this instead of law_name and law_resource_group_name."
+  validation {
+    condition     = var.law_cross_subscription_details == null || can(regex("^/subscriptions/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/resourceGroups/[^/]+/providers/Microsoft\\.OperationalInsights/workspaces/[^/]+$", var.law_cross_subscription_details.id))
+    error_message = "When provided, law_cross_subscription_details.id must be a valid Log Analytics workspace resource ID."
+  }
+  validation {
+    condition     = var.law_cross_subscription_details == null || can(regex("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$", var.law_cross_subscription_details.workspace_id))
+    error_message = "When provided, law_cross_subscription_details.workspace_id must be a UUID."
+  }
+  validation {
+    condition     = var.law_cross_subscription_details == null || length(trimspace(var.law_cross_subscription_details.shared_key)) > 0
+    error_message = "When provided, law_cross_subscription_details.shared_key must be non-empty."
+  }
+  validation {
+    condition     = var.law_cross_subscription_details == null || (var.law_name == null && var.law_resource_group_name == null)
+    error_message = "When law_cross_subscription_details is provided, leave law_name and law_resource_group_name unset."
+  }
+  validation {
+    condition     = var.law_cross_subscription_details != null || var.law_name != null
+    error_message = "Set law_name when using workspaces from the current subscription."
+  }
 }
 
 variable "service_plan_name" {

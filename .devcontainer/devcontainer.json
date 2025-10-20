@@ -26,9 +26,9 @@
                 "editor.formatOnPaste": true,
                 "files.trimFinalNewlines": true,
                 "files.trimTrailingWhitespace": true,
-                "files.associations": {
-                    "*.tfvars": "terraform"
-                },
+                //"files.associations": {
+                //    "*.tfvars": "terraform"
+                //},
                 "[json]": {
                     "editor.defaultFormatter": "vscode.json-language-features"
                 },
@@ -67,7 +67,7 @@
             "version": "latest"
         },
         "ghcr.io/devcontainers/features/terraform:1": {
-            "version": "1.4.2",
+            "version": "latest",
             "tflint": "latest",
             "terragrunt": "none"
         }
