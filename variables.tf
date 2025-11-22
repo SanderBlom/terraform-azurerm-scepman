@@ -138,6 +138,12 @@ variable "subnet_endpoints_name" {
   description = "Name of the subnet created for the other endpoints"
 }
 
+variable "subnet_default_outbound_access_enabled" {
+  type        = bool
+  default     = false
+  description = "If the subnet should have default outbound access enabled"
+}
+
 variable "tags" {
   type        = map(string)
   default     = {}
