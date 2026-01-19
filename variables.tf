@@ -129,7 +129,7 @@ variable "law_cross_subscription_details" {
     error_message = "When provided, law_cross_subscription_details.workspace_id must be a UUID."
   }
   validation {
-    condition     = var.law_cross_subscription_details == null || length(trimspace(var.law_cross_subscription_details.shared_key)) > 0
+    condition     = var.law_cross_subscription_details == null || length(trimspace(try(var.law_cross_subscription_details.shared_key, ""))) > 0
     error_message = "When provided, law_cross_subscription_details.shared_key must be non-empty."
   }
   validation {
