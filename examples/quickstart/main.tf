@@ -4,7 +4,7 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = ">= 4.8"
+      version = ">= 4.42"
     }
   }
   backend "local" {}
@@ -46,10 +46,10 @@ locals {
 
 module "scepman" {
   # Option 1: Local module, use from local development
-  # source = "../.." # This is the local path to the module
+  source = "../.." # This is the local path to the module
 
   # Option 2: Use the terraform registry version
-  source = "scepman/scepman/azurerm"
+  # source = "scepman/scepman/azurerm"
   # version = "0.1.0"
 
 
