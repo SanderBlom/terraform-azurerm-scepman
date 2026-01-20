@@ -10,6 +10,7 @@ resource "azurerm_virtual_network" "vnet-scepman" {
 resource "azurerm_subnet" "subnet-endpoints" {
   name                 = var.subnet_endpoints_name
   resource_group_name  = var.resource_group_name
+  default_outbound_access_enabled = false
   virtual_network_name = azurerm_virtual_network.vnet-scepman.name
   address_prefixes     = [cidrsubnet(var.vnet_address_space[0], 3, 1)]
 }
@@ -17,6 +18,7 @@ resource "azurerm_subnet" "subnet-endpoints" {
 resource "azurerm_subnet" "subnet-appservices" {
   name                 = var.subnet_appservices_name
   resource_group_name  = var.resource_group_name
+  default_outbound_access_enabled = false
   virtual_network_name = azurerm_virtual_network.vnet-scepman.name
   address_prefixes     = [cidrsubnet(var.vnet_address_space[0], 3, 0)]
   delegation {
