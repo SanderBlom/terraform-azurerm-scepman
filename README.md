@@ -41,9 +41,7 @@ Visit [containers.dev](https://containers.dev) for more information
 
 ## Examples
 
-### Advanced
-
-For more informations how to deploy the following example, see the [Advanced Example Documentation](examples/advanced/).
+### Advanced Example
 
 ```hcl
 # Version requirements
@@ -104,6 +102,7 @@ module "scepman" {
   app_settings_certificate_master = var.app_settings_certificate_master
 
   enable_application_insights = var.enable_application_insights
+  manage_entra_apps           = true
 
   tags = var.tags
 }

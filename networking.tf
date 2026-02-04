@@ -1,33 +1,74 @@
-
 # vnet and subnet for internal communication
+
+removed {
+  from = azurerm_subnet.subnet-endpoints
+  lifecycle {
+    destroy = false
+  }
+}
+
+removed {
+  from = azurerm_subnet.subnet-appservices
+  lifecycle {
+    destroy = false
+  }
+}
+
+# Network Security Group for endpoints subnet
+resource "azurerm_network_security_group" "nsg-endpoints" {
+  name                = var.nsg_endpoints_name
+  location            = var.location
+  resource_group_name = var.resource_group_name
+
+  tags = var.tags
+}
+
+# Network Security Group for app services subnet
+resource "azurerm_network_security_group" "nsg-appservices" {
+  name                = var.nsg_appservices_name
+  location            = var.location
+  resource_group_name = var.resource_group_name
+
+  tags = var.tags
+}
+
 resource "azurerm_virtual_network" "vnet-scepman" {
   name                = var.vnet_name
   resource_group_name = var.resource_group_name
   location            = var.location
   address_space       = var.vnet_address_space
-}
 
-resource "azurerm_subnet" "subnet-endpoints" {
-  name                 = var.subnet_endpoints_name
-  resource_group_name  = var.resource_group_name
-  default_outbound_access_enabled = false
-  virtual_network_name = azurerm_virtual_network.vnet-scepman.name
-  address_prefixes     = [cidrsubnet(var.vnet_address_space[0], 3, 1)]
-}
-
-resource "azurerm_subnet" "subnet-appservices" {
-  name                 = var.subnet_appservices_name
-  resource_group_name  = var.resource_group_name
-  default_outbound_access_enabled = false
-  virtual_network_name = azurerm_virtual_network.vnet-scepman.name
-  address_prefixes     = [cidrsubnet(var.vnet_address_space[0], 3, 0)]
-  delegation {
-    name = "delegation"
-    service_delegation {
-      actions = ["Microsoft.Network/virtualNetworks/subnets/action", ]
-      name    = "Microsoft.Web/serverFarms"
+  subnet {
+    name                            = var.subnet_appservices_name
+    address_prefixes                = [cidrsubnet(var.vnet_address_space[0], 3, 0)]
+    default_outbound_access_enabled = false
+    security_group                  = azurerm_network_security_group.nsg-appservices.id
+    delegation {
+      name = "delegation"
+      service_delegation {
+        actions = ["Microsoft.Network/virtualNetworks/subnets/action"]
+        name    = "Microsoft.Web/serverFarms"
+      }
     }
   }
+
+  subnet {
+    name                            = var.subnet_endpoints_name
+    address_prefixes                = [cidrsubnet(var.vnet_address_space[0], 3, 1)]
+    default_outbound_access_enabled = false
+    security_group                  = azurerm_network_security_group.nsg-endpoints.id
+  }
+}
+
+data "azurerm_subnet" "vnet-subnets" {
+  for_each             = toset(azurerm_virtual_network.vnet-scepman.subnet.*.name)
+  name                 = each.value
+  virtual_network_name = azurerm_virtual_network.vnet-scepman.name
+  resource_group_name  = azurerm_virtual_network.vnet-scepman.resource_group_name
+
+  depends_on = [
+    azurerm_virtual_network.vnet-scepman
+  ]
 }
 
 resource "azurerm_private_dns_zone" "dnsprivatezone-kv" {
@@ -60,7 +101,7 @@ resource "azurerm_private_endpoint" "storage_pe" {
   name                = "pep-sts-scepman"
   location            = var.location
   resource_group_name = var.resource_group_name
-  subnet_id           = azurerm_subnet.subnet-endpoints.id
+  subnet_id           = "${azurerm_virtual_network.vnet-scepman.id}/subnets/${var.subnet_endpoints_name}"
 
   private_dns_zone_group {
     name                 = "privatednszonegroup"
@@ -81,7 +122,7 @@ resource "azurerm_private_endpoint" "key_vault_pe" {
   name                = "pep-kv-scepman"
   location            = var.location
   resource_group_name = var.resource_group_name
-  subnet_id           = azurerm_subnet.subnet-endpoints.id
+  subnet_id           = "${azurerm_virtual_network.vnet-scepman.id}/subnets/${var.subnet_endpoints_name}"
 
   private_dns_zone_group {
     name                 = "privatednszonegroup"

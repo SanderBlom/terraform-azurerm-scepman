@@ -63,6 +63,7 @@ module "scepman" {
   app_service_name_primary            = local.app_service_name_primary
   app_service_name_certificate_master = local.app_service_name_certificate_master
   law_name                            = local.law_name
+  manage_entra_apps                   = true
 
   tags = var.tags
 }

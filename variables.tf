@@ -272,6 +272,18 @@ variable "subnet_endpoints_name" {
   description = "Name of the subnet created for the other endpoints"
 }
 
+variable "nsg_endpoints_name" {
+  type        = string
+  default     = "nsg-scepman-endpoints"
+  description = "Name of the Network Security Group for the endpoints subnet"
+}
+
+variable "nsg_appservices_name" {
+  type        = string
+  default     = "nsg-scepman-appservices"
+  description = "Name of the Network Security Group for the app services subnet"
+}
+
 variable "tags" {
   type        = map(string)
   default     = {}
@@ -299,4 +311,9 @@ variable "app_settings_certificate_master" {
   type        = map(string)
   default     = {}
   description = "A mapping of app settings to assign to the certificate master app service"
+}
+
+variable "manage_entra_apps" {
+  type        = bool
+  description = "Whether to manage the Entra app registrations for SCEPman and Certificate Master within this module. If set to true, the user executing this must have Global Administrator privileges in the tenant/the service principal must have Application.ReadWrite.All, AppRoleAssignment.ReadWrite.All, DelegatedPermissionGrant.ReadWrite.All permissions. For legacy installations, which were created before this setting existed, only set to true if you wish to migrate to the new model. For new installations, it is recommended to set this to true."
 }
