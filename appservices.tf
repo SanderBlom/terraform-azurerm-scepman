@@ -81,12 +81,12 @@ locals {
   }
 
   app_settings_primary_app = var.manage_entra_apps ? {
-    "AppConfig:CertMaster:URL"                                       = format("https://%s.azurewebsites.net", var.app_service_name_certificate_master)
-    "AppConfig:AuthConfig:ApplicationId"                             = module.appreg_scepman.client_id
-    "AppConfig:AuthConfig:UseManagedIdentity"                        = "true"
-    "AppConfig:AuthConfig:ManagedIdentityEnabledForWebsiteHostname"  = format("%s.azurewebsites.net", var.app_service_name_primary)
-    "AppConfig:AuthConfig:ManagedIdentityEnabledOnUnixTime"          = time_offset.managed_identity.unix
-    "AppConfig:AuthConfig:ManagedIdentityPermissionLevel"            = "2"
+    "AppConfig:CertMaster:URL"                                      = format("https://%s.azurewebsites.net", var.app_service_name_certificate_master)
+    "AppConfig:AuthConfig:ApplicationId"                            = module.appreg_scepman[0].client_id
+    "AppConfig:AuthConfig:UseManagedIdentity"                       = "true"
+    "AppConfig:AuthConfig:ManagedIdentityEnabledForWebsiteHostname" = format("%s.azurewebsites.net", var.app_service_name_primary)
+    "AppConfig:AuthConfig:ManagedIdentityEnabledOnUnixTime"         = time_offset.managed_identity.unix
+    "AppConfig:AuthConfig:ManagedIdentityPermissionLevel"           = "2"
   } : {}
 
   # if app insight exists, add to app settings
@@ -157,22 +157,17 @@ locals {
 
 
   app_settings_certificate_master_base = {
-    "WEBSITE_RUN_FROM_PACKAGE"                              = local.artifacts_url_certificate_master
-    "AppConfig:AzureStorage:TableStorageEndpoint"           = azurerm_storage_account.storage.primary_table_endpoint
-    "AppConfig:SCEPman:URL"                                 = local.app_settings_primary_url
-    "AppConfig:AuthConfig:TenantId"                         = data.azurerm_client_config.current.tenant_id
-    "AppConfig:LoggingConfig:WorkspaceId"                   = local.law_workspace_id
-    "AppConfig:LoggingConfig:SharedKey"                     = local.law_shared_key
-    "AppConfig:AuthConfig:ApplicationId"                    = module.appreg_certmaster.client_id
-    "AppConfig:AuthConfig:SCEPmanAPIScope"                  = "api://${module.appreg_scepman.client_id}"
-    "AppConfig:AuthConfig:UseManagedIdentity"               = "true"
-    "AppConfig:AuthConfig:ManagedIdentityEnabledOnUnixTime" = time_offset.managed_identity.unix
-    "AppConfig:AuthConfig:ManagedIdentityPermissionLevel"   = "2"
+    "WEBSITE_RUN_FROM_PACKAGE"                    = local.artifacts_url_certificate_master
+    "AppConfig:AzureStorage:TableStorageEndpoint" = azurerm_storage_account.storage.primary_table_endpoint
+    "AppConfig:SCEPman:URL"                       = local.app_settings_primary_url
+    "AppConfig:AuthConfig:TenantId"               = data.azurerm_client_config.current.tenant_id
+    "AppConfig:LoggingConfig:WorkspaceId"         = local.law_workspace_id
+    "AppConfig:LoggingConfig:SharedKey"           = local.law_shared_key
   }
 
   app_settings_certificate_master_app = var.manage_entra_apps ? {
-    "AppConfig:AuthConfig:ApplicationId"                    = module.appreg_certmaster.client_id
-    "AppConfig:AuthConfig:SCEPmanAPIScope"                  = "api://${module.appreg_scepman.client_id}"
+    "AppConfig:AuthConfig:ApplicationId"                    = module.appreg_certmaster[0].client_id
+    "AppConfig:AuthConfig:SCEPmanAPIScope"                  = local.scepman_api_scope
     "AppConfig:AuthConfig:UseManagedIdentity"               = "true"
     "AppConfig:AuthConfig:ManagedIdentityEnabledOnUnixTime" = time_offset.managed_identity.unix
     "AppConfig:AuthConfig:ManagedIdentityPermissionLevel"   = "2"
@@ -514,7 +509,7 @@ resource "azurerm_linux_web_app" "app" {
 
 # Certificate Master App Service
 resource "azurerm_linux_web_app" "app_cm" {
-  count                     = (lower(var.service_plan_os_type) == "linux" && !var.manage_entra_apps)? 1 : 0
+  count                     = (lower(var.service_plan_os_type) == "linux" && !var.manage_entra_apps) ? 1 : 0
   name                      = var.app_service_name_certificate_master
   resource_group_name       = var.resource_group_name
   location                  = var.location
@@ -574,7 +569,7 @@ resource "azurerm_linux_web_app" "app_cm" {
 
 
 resource "azurerm_linux_web_app" "app_full" {
-  count                     = (lower(var.service_plan_os_type) == "linux" && var.manage_entra_apps)? 1 : 0
+  count                     = (lower(var.service_plan_os_type) == "linux" && var.manage_entra_apps) ? 1 : 0
   name                      = var.app_service_name_primary
   resource_group_name       = var.resource_group_name
   location                  = var.location
@@ -636,7 +631,7 @@ resource "azurerm_linux_web_app" "app_full" {
 
 # Certificate Master App Service
 resource "azurerm_linux_web_app" "app_cm_full" {
-  count                     = (lower(var.service_plan_os_type) == "linux" && var.manage_entra_apps)? 1 : 0
+  count                     = (lower(var.service_plan_os_type) == "linux" && var.manage_entra_apps) ? 1 : 0
   name                      = var.app_service_name_certificate_master
   resource_group_name       = var.resource_group_name
   location                  = var.location
