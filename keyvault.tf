@@ -35,7 +35,7 @@ resource "azurerm_key_vault_access_policy" "scepman" {
 
   key_vault_id = azurerm_key_vault.vault.id
   tenant_id    = data.azurerm_client_config.current.tenant_id
-  object_id    = local.secpman_mi_principal_id
+  object_id    = local.scepman_mi_principal_id
 
   certificate_permissions = [
     "Get",
@@ -64,5 +64,5 @@ resource "azurerm_role_assignment" "kv_roles" {
 
   scope                = azurerm_key_vault.vault.id
   role_definition_name = each.key
-  principal_id         = local.secpman_mi_principal_id
+  principal_id         = local.scepman_mi_principal_id
 }

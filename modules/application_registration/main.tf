@@ -51,7 +51,7 @@ resource "azuread_application_permission_scope" "this" {
   user_consent_display_name  = each.value.user_consent_display_name
 }
 
-resource "azuread_application_identifier_uri" "example" {
+resource "azuread_application_identifier_uri" "this" {
   application_id = azuread_application_registration.this.id
   identifier_uri = "api://${azuread_application_registration.this.client_id}"
 }

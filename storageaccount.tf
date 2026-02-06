@@ -66,7 +66,7 @@ resource "azurerm_storage_account" "storage" {
 
 locals {
   object_ids = {
-    scepman    = local.secpman_mi_principal_id
+    scepman    = local.scepman_mi_principal_id
     certmaster = local.cm_mi_principal_id
   }
 }

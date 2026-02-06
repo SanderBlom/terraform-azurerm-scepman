@@ -60,17 +60,6 @@ resource "azurerm_virtual_network" "vnet-scepman" {
   }
 }
 
-data "azurerm_subnet" "vnet-subnets" {
-  for_each             = toset(azurerm_virtual_network.vnet-scepman.subnet.*.name)
-  name                 = each.value
-  virtual_network_name = azurerm_virtual_network.vnet-scepman.name
-  resource_group_name  = azurerm_virtual_network.vnet-scepman.resource_group_name
-
-  depends_on = [
-    azurerm_virtual_network.vnet-scepman
-  ]
-}
-
 resource "azurerm_private_dns_zone" "dnsprivatezone-kv" {
   name                = "privatelink.vaultcore.azure.net"
   resource_group_name = var.resource_group_name

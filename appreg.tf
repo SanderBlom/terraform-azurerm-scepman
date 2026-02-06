@@ -183,7 +183,7 @@ locals {
     }
   ]
 
-  secpman_mi_principal_id = try(
+  scepman_mi_principal_id = try(
     azurerm_linux_web_app.app[0].identity[0].principal_id,
     azurerm_windows_web_app.app[0].identity[0].principal_id,
     azurerm_linux_web_app.app_full[0].identity[0].principal_id,
@@ -231,7 +231,7 @@ resource "azuread_service_principal" "scepman" {
 }
 
 locals {
-  scepman_api_scope = "api://${module.appreg_scepman[0].client_id}"
+  scepman_api_scope = var.manage_entra_apps ? "api://${module.appreg_scepman[0].client_id}" : null
 }
 
 module "appreg_certmaster" {
@@ -288,31 +288,31 @@ resource "azuread_service_principal_delegated_permission_grant" "certmaster_grap
 resource "azuread_app_role_assignment" "mi_scepman_directory_read_all" {
   count               = var.manage_entra_apps ? 1 : 0
   app_role_id         = data.azuread_service_principal.msgraph.app_role_ids["Directory.Read.All"]
-  principal_object_id = local.secpman_mi_principal_id
+  principal_object_id = local.scepman_mi_principal_id
   resource_object_id  = data.azuread_service_principal.msgraph.object_id
 }
 resource "azuread_app_role_assignment" "mi_scepman_device_management_config_read_all" {
   count               = var.manage_entra_apps ? 1 : 0
   app_role_id         = data.azuread_service_principal.msgraph.app_role_ids["DeviceManagementConfiguration.Read.All"]
-  principal_object_id = local.secpman_mi_principal_id
+  principal_object_id = local.scepman_mi_principal_id
   resource_object_id  = data.azuread_service_principal.msgraph.object_id
 }
 resource "azuread_app_role_assignment" "mi_scepman_device_management_managed_devices_read_all" {
   count               = var.manage_entra_apps ? 1 : 0
   app_role_id         = data.azuread_service_principal.msgraph.app_role_ids["DeviceManagementManagedDevices.Read.All"]
-  principal_object_id = local.secpman_mi_principal_id
+  principal_object_id = local.scepman_mi_principal_id
   resource_object_id  = data.azuread_service_principal.msgraph.object_id
 }
 resource "azuread_app_role_assignment" "mi_scepman_identity_risky_user_read_all" {
   count               = var.manage_entra_apps ? 1 : 0
   app_role_id         = data.azuread_service_principal.msgraph.app_role_ids["IdentityRiskyUser.Read.All"]
-  principal_object_id = local.secpman_mi_principal_id
+  principal_object_id = local.scepman_mi_principal_id
   resource_object_id  = data.azuread_service_principal.msgraph.object_id
 }
 resource "azuread_app_role_assignment" "mi_scepman_intune_scep_challenge_provider" {
   count               = var.manage_entra_apps ? 1 : 0
   app_role_id         = data.azuread_service_principal.intune.app_role_ids["scep_challenge_provider"]
-  principal_object_id = local.secpman_mi_principal_id
+  principal_object_id = local.scepman_mi_principal_id
   resource_object_id  = data.azuread_service_principal.intune.object_id
 }
 
