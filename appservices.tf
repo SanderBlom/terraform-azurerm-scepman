@@ -513,6 +513,7 @@ resource "azurerm_linux_web_app" "app_cm" {
   name                      = var.app_service_name_certificate_master
   resource_group_name       = var.resource_group_name
   location                  = var.location
+  https_only                = true
   virtual_network_subnet_id = "${azurerm_virtual_network.vnet-scepman.id}/subnets/${var.subnet_appservices_name}"
 
   service_plan_id = local.service_plan_resource_id
@@ -635,6 +636,7 @@ resource "azurerm_linux_web_app" "app_cm_full" {
   name                      = var.app_service_name_certificate_master
   resource_group_name       = var.resource_group_name
   location                  = var.location
+  https_only                = true
   virtual_network_subnet_id = "${azurerm_virtual_network.vnet-scepman.id}/subnets/${var.subnet_appservices_name}"
 
   service_plan_id = local.service_plan_resource_id
