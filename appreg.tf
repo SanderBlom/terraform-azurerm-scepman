@@ -105,10 +105,7 @@ locals {
       description          = "Request TLS server certificates"
       display_name         = "Request Server"
       value                = "Request.Server"
-    }
-  ]
-
-  certmaster_additional_approles = [
+    },
     {
       allowed_member_types = ["User"]
       description          = "Request certificates of all types using CSR"
