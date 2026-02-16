@@ -6,7 +6,7 @@ terraform {
     }
     azuread = {
       source  = "hashicorp/azuread"
-      version = ">= 3.0"
+      version = ">= 3.0, < 4.0.0"
     }
     random = {
       source  = "hashicorp/random"
@@ -14,7 +14,7 @@ terraform {
     }
     time = {
       source  = "hashicorp/time"
-      version = ">= 0.13"
+      version = ">= 0.13, < 1.0.0"
     }
   }
   required_version = ">= 1.9"
