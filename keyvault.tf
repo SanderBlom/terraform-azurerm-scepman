@@ -27,7 +27,6 @@ locals {
     "Key Vault Certificates Officer" = "kv_certificates_officer"
     "Key Vault Secrets User"         = "kv_secrets_user"
   }
-  primary_app_principal_id = lower(var.service_plan_os_type) == "linux" ? azurerm_linux_web_app.app[0].identity[0].principal_id : azurerm_windows_web_app.app[0].identity[0].principal_id
 }
 
 # Key Vault Access Policy
@@ -36,7 +35,7 @@ resource "azurerm_key_vault_access_policy" "scepman" {
 
   key_vault_id = azurerm_key_vault.vault.id
   tenant_id    = data.azurerm_client_config.current.tenant_id
-  object_id    = local.primary_app_principal_id
+  object_id    = local.scepman_mi_principal_id
 
   certificate_permissions = [
     "Get",
@@ -65,5 +64,5 @@ resource "azurerm_role_assignment" "kv_roles" {
 
   scope                = azurerm_key_vault.vault.id
   role_definition_name = each.key
-  principal_id         = local.primary_app_principal_id
+  principal_id         = local.scepman_mi_principal_id
 }

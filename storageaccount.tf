@@ -54,13 +54,21 @@ resource "azurerm_storage_account" "storage" {
   }
 
   tags = var.tags
+
+  lifecycle {
+    ignore_changes = [
+      network_rules[0].private_link_access
+    ]
+  }
 }
 
 # Role Assignment - Storage Table Data Contributor
 
 locals {
-  app_services = lower(var.service_plan_os_type) == "linux" ? [azurerm_linux_web_app.app[0], azurerm_linux_web_app.app_cm[0]] : [azurerm_windows_web_app.app[0], azurerm_windows_web_app.app_cm[0]]
-  object_ids   = { for key, item in local.app_services : key => item.identity[0].principal_id }
+  object_ids = {
+    scepman    = local.scepman_mi_principal_id
+    certmaster = local.cm_mi_principal_id
+  }
 }
 
 resource "azurerm_role_assignment" "table_contributor" {

@@ -80,6 +80,15 @@ locals {
     "AppConfig:KeyVaultConfig:RootCertificateConfig:Subject"         = format("CN=SCEPman-Root-CA-V1,OU=%s,O=\"%s\"", data.azurerm_client_config.current.tenant_id, var.organization_name)
   }
 
+  app_settings_primary_app = var.manage_entra_apps ? {
+    "AppConfig:CertMaster:URL"                                      = format("https://%s.azurewebsites.net", var.app_service_name_certificate_master)
+    "AppConfig:AuthConfig:ApplicationId"                            = module.appreg_scepman[0].client_id
+    "AppConfig:AuthConfig:UseManagedIdentity"                       = "true"
+    "AppConfig:AuthConfig:ManagedIdentityEnabledForWebsiteHostname" = format("%s.azurewebsites.net", var.app_service_name_primary)
+    "AppConfig:AuthConfig:ManagedIdentityEnabledOnUnixTime"         = time_offset.managed_identity.unix
+    "AppConfig:AuthConfig:ManagedIdentityPermissionLevel"           = "2"
+  } : {}
+
   # if app insight exists, add to app settings
   app_settings_primary_app_insights = length(azurerm_application_insights.scepman-primary) > 0 ? {
     "APPINSIGHTS_INSTRUMENTATIONKEY"                  = azurerm_application_insights.scepman-primary[0].instrumentation_key
@@ -110,7 +119,7 @@ locals {
   // Normalize input app settings to use ":" as separator for easier merging
   normalized_app_settings_primary = { for k, v in var.app_settings_primary : replace(k, "__", ":") => v }
   // Merge maps will overwrite first by last > default variables, custom variables, resource variables
-  merged_app_settings_primary = merge(local.app_settings_primary_defaults, local.normalized_app_settings_primary, local.app_settings_primary_app_insights, local.app_settings_primary_base)
+  merged_app_settings_primary = merge(local.app_settings_primary_defaults, local.normalized_app_settings_primary, local.app_settings_primary_app_insights, local.app_settings_primary_base, local.app_settings_primary_app)
   // If OS is linux, replace ":" with"__" in app settings, if OS is windows (NOT linux), replace "__" with ":" in app settings
   app_settings_primary = lower(var.service_plan_os_type) == "linux" ? { for k, v in local.merged_app_settings_primary : replace(k, ":", "__") => v } : { for k, v in local.merged_app_settings_primary : replace(k, "__", ":") => v }
 
@@ -137,7 +146,14 @@ locals {
     "XDT_MicrosoftApplicationInsights_Mode"           = "recommended"
   } : {}
 
-  app_settings_primary_url = format("https://%s", lower(var.service_plan_os_type) == "linux" ? azurerm_linux_web_app.app[0].default_hostname : azurerm_windows_web_app.app[0].default_hostname)
+  default_hostname_primary = try(
+    azurerm_linux_web_app.app[0].default_hostname,
+    azurerm_windows_web_app.app[0].default_hostname,
+    azurerm_linux_web_app.app_full[0].default_hostname,
+    azurerm_windows_web_app.app_full[0].default_hostname
+  )
+
+  app_settings_primary_url = format("https://%s", local.default_hostname_primary)
 
 
   app_settings_certificate_master_base = {
@@ -149,25 +165,43 @@ locals {
     "AppConfig:LoggingConfig:SharedKey"           = local.law_shared_key
   }
 
+  app_settings_certificate_master_app = var.manage_entra_apps ? {
+    "AppConfig:AuthConfig:ApplicationId"                    = module.appreg_certmaster[0].client_id
+    "AppConfig:AuthConfig:SCEPmanAPIScope"                  = local.scepman_api_scope
+    "AppConfig:AuthConfig:UseManagedIdentity"               = "true"
+    "AppConfig:AuthConfig:ManagedIdentityEnabledOnUnixTime" = time_offset.managed_identity.unix
+    "AppConfig:AuthConfig:ManagedIdentityPermissionLevel"   = "2"
+  } : {}
+
+  default_hostname_cm = try(
+    azurerm_linux_web_app.app_cm[0].default_hostname,
+    azurerm_windows_web_app.app_cm[0].default_hostname,
+    azurerm_linux_web_app.app_cm_full[0].default_hostname,
+    azurerm_windows_web_app.app_cm_full[0].default_hostname
+  )
+
   // Normalize input app settings to use ":" as separator for easier merging
   normalized_app_settings_certificate_master = { for k, v in var.app_settings_certificate_master : replace(k, "__", ":") => v }
   // Merge maps will overwrite first by last > default variables, custom variables, resource variables
-  merged_app_settings_certificate_master = merge(local.app_settings_certificate_master_defaults, local.normalized_app_settings_certificate_master, local.app_settings_certificate_master_app_insights, local.app_settings_certificate_master_base)
+  merged_app_settings_certificate_master = merge(local.app_settings_certificate_master_defaults, local.normalized_app_settings_certificate_master, local.app_settings_certificate_master_app_insights, local.app_settings_certificate_master_base, local.app_settings_certificate_master_app)
   // If OS is linux, replace ":" with"__" in app settings, if OS is windows (NOT linux), replace "__" with ":" in app settings
   app_settings_certificate_master = lower(var.service_plan_os_type) == "linux" ? { for k, v in local.merged_app_settings_certificate_master : replace(k, ":", "__") => v } : { for k, v in local.merged_app_settings_certificate_master : replace(k, "__", ":") => v }
 }
 
+resource "time_offset" "managed_identity" {
+  offset_minutes = 5
+}
 
 
 ### Windows App Service
-#Scepman Primary
+# Scepman Primary
 resource "azurerm_windows_web_app" "app" {
-  count                     = lower(var.service_plan_os_type) == "windows" ? 1 : 0
+  count                     = (lower(var.service_plan_os_type) == "windows" && !var.manage_entra_apps) ? 1 : 0
   name                      = var.app_service_name_primary
   resource_group_name       = var.resource_group_name
   location                  = var.location
   https_only                = false
-  virtual_network_subnet_id = azurerm_subnet.subnet-appservices.id
+  virtual_network_subnet_id = "${azurerm_virtual_network.vnet-scepman.id}/subnets/${var.subnet_appservices_name}"
 
   service_plan_id = local.service_plan_resource_id
 
@@ -220,6 +254,7 @@ resource "azurerm_windows_web_app" "app" {
       app_settings["AppConfig:AuthConfig:ManagedIdentityPermissionLevel"],
       app_settings["AppConfig:CertMaster:URL"],
       app_settings["WEBSITE_HEALTHCHECK_MAXPINGFAILURES"],
+      tags,
       sticky_settings
     ]
   }
@@ -227,12 +262,12 @@ resource "azurerm_windows_web_app" "app" {
 
 # Certificate Master App Service
 resource "azurerm_windows_web_app" "app_cm" {
-  count                     = lower(var.service_plan_os_type) == "windows" ? 1 : 0
+  count                     = (lower(var.service_plan_os_type) == "windows" && !var.manage_entra_apps) ? 1 : 0
   name                      = var.app_service_name_certificate_master
   resource_group_name       = var.resource_group_name
   location                  = var.location
   https_only                = true
-  virtual_network_subnet_id = azurerm_subnet.subnet-appservices.id
+  virtual_network_subnet_id = "${azurerm_virtual_network.vnet-scepman.id}/subnets/${var.subnet_appservices_name}"
 
   service_plan_id = local.service_plan_resource_id
 
@@ -279,21 +314,24 @@ resource "azurerm_windows_web_app" "app_cm" {
       app_settings["AppConfig:AuthConfig:ManagedIdentityPermissionLevel"],
       app_settings["AppConfig:AuthConfig:SCEPmanAPIScope"],
       app_settings["WEBSITE_HEALTHCHECK_MAXPINGFAILURES"],
-      sticky_settings
+      sticky_settings,
+      tags
     ]
   }
 
 }
 
+
+
 ### Linux App Service
-#Scepman Primary
+# Scepman Primary
 resource "azurerm_linux_web_app" "app" {
-  count                     = lower(var.service_plan_os_type) == "linux" ? 1 : 0
+  count                     = lower(var.service_plan_os_type) == "linux" && !var.manage_entra_apps ? 1 : 0
   name                      = var.app_service_name_primary
   resource_group_name       = var.resource_group_name
   location                  = var.location
   https_only                = false
-  virtual_network_subnet_id = azurerm_subnet.subnet-appservices.id
+  virtual_network_subnet_id = "${azurerm_virtual_network.vnet-scepman.id}/subnets/${var.subnet_appservices_name}"
 
   service_plan_id = local.service_plan_resource_id
 
@@ -347,17 +385,20 @@ resource "azurerm_linux_web_app" "app" {
       app_settings["AppConfig__AuthConfig__ManagedIdentityPermissionLevel"],
       app_settings["AppConfig__CertMaster__URL"],
       app_settings["WEBSITE_HEALTHCHECK_MAXPINGFAILURES"],
-      sticky_settings
+      sticky_settings,
+      tags
     ]
   }
 }
+
 # Certificate Master App Service
 resource "azurerm_linux_web_app" "app_cm" {
-  count                     = lower(var.service_plan_os_type) == "linux" ? 1 : 0
+  count                     = (lower(var.service_plan_os_type) == "linux" && !var.manage_entra_apps) ? 1 : 0
   name                      = var.app_service_name_certificate_master
   resource_group_name       = var.resource_group_name
   location                  = var.location
-  virtual_network_subnet_id = azurerm_subnet.subnet-appservices.id
+  https_only                = true
+  virtual_network_subnet_id = "${azurerm_virtual_network.vnet-scepman.id}/subnets/${var.subnet_appservices_name}"
 
   service_plan_id = local.service_plan_resource_id
 
@@ -404,7 +445,8 @@ resource "azurerm_linux_web_app" "app_cm" {
       app_settings["AppConfig__AuthConfig__ManagedIdentityPermissionLevel"],
       app_settings["AppConfig__AuthConfig__SCEPmanAPIScope"],
       app_settings["WEBSITE_HEALTHCHECK_MAXPINGFAILURES"],
-      sticky_settings
+      sticky_settings,
+      tags
     ]
   }
 
