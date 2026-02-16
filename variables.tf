@@ -316,4 +316,5 @@ variable "app_settings_certificate_master" {
 variable "manage_entra_apps" {
   type        = bool
   description = "Whether to manage the Entra app registrations for SCEPman and Certificate Master within this module. If set to true, the user executing this must have Global Administrator privileges in the tenant/the service principal must have Application.ReadWrite.All, AppRoleAssignment.ReadWrite.All, DelegatedPermissionGrant.ReadWrite.All permissions. For legacy installations, which were created before this setting existed, only set to true if you wish to migrate to the new model. For new installations, it is recommended to set this to true."
+  default     = false
 }
