@@ -75,6 +75,22 @@ output "scepman_application" {
   description = "Information about the Application and Service Principal for the SCEPman API"
 }
 
+output "certmaster_application" {
+  value = {
+    azuread_application = {
+      id        = one(module.appreg_certmaster[*].id)
+      object_id = one(module.appreg_certmaster[*].object_id)
+      client_id = one(module.appreg_certmaster[*].client_id)
+    }
+    service_principal = {
+      id           = one(azuread_service_principal.certmaster[*].id)
+      display_name = one(azuread_service_principal.certmaster[*].display_name)
+      object_id    = one(azuread_service_principal.certmaster[*].object_id)
+    }
+  }
+  description = "Information about the Application and Service Principal for the SCEPman Certificate Master"
+}
+
 output "primary_mi_principal_id" {
   value       = local.scepman_mi_principal_id
   description = "principal_id of the system assigned managed identity of the SCEPman primary app"
