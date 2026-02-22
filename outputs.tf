@@ -23,6 +23,41 @@ output "storage_account_identity_tenant_id" {
   description = "Tenant ID of the storage account system-assigned managed identity when enabled."
 }
 
+output "app_services" {
+  value = {
+    primary = {
+      id = try(
+        azurerm_linux_web_app.app[0].id,
+        azurerm_windows_web_app.app[0].id,
+        azurerm_linux_web_app.app_full[0].id,
+        azurerm_windows_web_app.app_full[0].id
+      )
+      name = try(
+        azurerm_linux_web_app.app[0].name,
+        azurerm_windows_web_app.app[0].name,
+        azurerm_linux_web_app.app_full[0].name,
+        azurerm_windows_web_app.app_full[0].name
+      )
+    }
+    certificate_master = {
+
+      id = try(
+        azurerm_linux_web_app.app_cm[0].id,
+        azurerm_windows_web_app.app_cm[0].id,
+        azurerm_linux_web_app.app_cm_full[0].id,
+        azurerm_windows_web_app.app_cm_full[0].id
+      )
+      name = try(
+        azurerm_linux_web_app.app_cm[0].name,
+        azurerm_windows_web_app.app_cm[0].name,
+        azurerm_linux_web_app.app_cm_full[0].name,
+        azurerm_windows_web_app.app_cm_full[0].name
+      )
+    }
+  }
+  description = "Information about the deployed App Services for SCEPman"
+}
+
 output "scepman_application" {
   value = {
     azuread_application = {
