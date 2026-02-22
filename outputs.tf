@@ -39,3 +39,13 @@ output "scepman_application" {
   }
   description = "Information about the Application and Service Principal for the SCEPman API"
 }
+
+output "primary_mi_principal_id" {
+  value       = local.scepman_mi_principal_id
+  description = "principal_id of the system assigned managed identity of the SCEPman primary app"
+}
+
+output "certmaster_mi_principal_id" {
+  value       = local.cm_mi_principal_id
+  description = "principal_id of the system assigned managed identity of the SCEPman certificate master"
+}

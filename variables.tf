@@ -318,3 +318,15 @@ variable "manage_entra_apps" {
   description = "Whether to manage the Entra app registrations for SCEPman and Certificate Master within this module. If set to true, the user executing this must have Global Administrator privileges in the tenant/the service principal must have Application.ReadWrite.All, AppRoleAssignment.ReadWrite.All, DelegatedPermissionGrant.ReadWrite.All permissions. For legacy installations, which were created before this setting existed, only set to true if you wish to migrate to the new model. For new installations, it is recommended to set this to true."
   default     = false
 }
+
+variable "primary_uami_ids" {
+  type        = set(string)
+  description = "Set of user assigned managed identity resource IDs to assign to the SCEPman primary app service"
+  default     = []
+}
+
+variable "certificate_master_uami_ids" {
+  type        = set(string)
+  description = "Set of user assigned managed identity resource IDs to assign to the SCEPman Certificate Master app service"
+  default     = []
+}
