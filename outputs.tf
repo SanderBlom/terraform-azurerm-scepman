@@ -77,14 +77,14 @@ output "scepman_application" {
 output "certmaster_application" {
   value = {
     azuread_application = {
-      id        = one(module.appreg_certmaster[*].id)
-      object_id = one(module.appreg_certmaster[*].object_id)
-      client_id = one(module.appreg_certmaster[*].client_id)
+      id        = try(one(module.appreg_certmaster[*].id), null)
+      object_id = try(one(module.appreg_certmaster[*].object_id), null)
+      client_id = try(one(module.appreg_certmaster[*].client_id), null)
     }
     service_principal = {
-      id           = one(azuread_service_principal.certmaster[*].id)
-      display_name = one(azuread_service_principal.certmaster[*].display_name)
-      object_id    = one(azuread_service_principal.certmaster[*].object_id)
+      id           = try(one(azuread_service_principal.certmaster[*].id), null)
+      display_name = try(one(azuread_service_principal.certmaster[*].display_name), null)
+      object_id    = try(one(azuread_service_principal.certmaster[*].object_id), null)
     }
   }
   description = "Information about the Application and Service Principal for the SCEPman Certificate Master"
