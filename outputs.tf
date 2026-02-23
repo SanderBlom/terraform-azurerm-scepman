@@ -40,7 +40,6 @@ output "app_services" {
       )
     }
     certificate_master = {
-
       id = try(
         azurerm_linux_web_app.app_cm[0].id,
         azurerm_windows_web_app.app_cm[0].id,
