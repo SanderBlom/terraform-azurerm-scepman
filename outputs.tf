@@ -23,6 +23,40 @@ output "storage_account_identity_tenant_id" {
   description = "Tenant ID of the storage account system-assigned managed identity when enabled."
 }
 
+output "app_services" {
+  value = {
+    primary = {
+      id = try(
+        azurerm_linux_web_app.app[0].id,
+        azurerm_windows_web_app.app[0].id,
+        azurerm_linux_web_app.app_full[0].id,
+        azurerm_windows_web_app.app_full[0].id
+      )
+      name = try(
+        azurerm_linux_web_app.app[0].name,
+        azurerm_windows_web_app.app[0].name,
+        azurerm_linux_web_app.app_full[0].name,
+        azurerm_windows_web_app.app_full[0].name
+      )
+    }
+    certificate_master = {
+      id = try(
+        azurerm_linux_web_app.app_cm[0].id,
+        azurerm_windows_web_app.app_cm[0].id,
+        azurerm_linux_web_app.app_cm_full[0].id,
+        azurerm_windows_web_app.app_cm_full[0].id
+      )
+      name = try(
+        azurerm_linux_web_app.app_cm[0].name,
+        azurerm_windows_web_app.app_cm[0].name,
+        azurerm_linux_web_app.app_cm_full[0].name,
+        azurerm_windows_web_app.app_cm_full[0].name
+      )
+    }
+  }
+  description = "Information about the deployed App Services for SCEPman"
+}
+
 output "scepman_application" {
   value = {
     azuread_application = {
@@ -38,4 +72,30 @@ output "scepman_application" {
     }
   }
   description = "Information about the Application and Service Principal for the SCEPman API"
+}
+
+output "certmaster_application" {
+  value = {
+    azuread_application = {
+      id        = try(one(module.appreg_certmaster[*].id), null)
+      object_id = try(one(module.appreg_certmaster[*].object_id), null)
+      client_id = try(one(module.appreg_certmaster[*].client_id), null)
+    }
+    service_principal = {
+      id           = try(one(azuread_service_principal.certmaster[*].id), null)
+      display_name = try(one(azuread_service_principal.certmaster[*].display_name), null)
+      object_id    = try(one(azuread_service_principal.certmaster[*].object_id), null)
+    }
+  }
+  description = "Information about the Application and Service Principal for the SCEPman Certificate Master"
+}
+
+output "primary_mi_principal_id" {
+  value       = local.scepman_mi_principal_id
+  description = "principal_id of the system assigned managed identity of the SCEPman primary app"
+}
+
+output "certmaster_mi_principal_id" {
+  value       = local.cm_mi_principal_id
+  description = "principal_id of the system assigned managed identity of the SCEPman certificate master"
 }

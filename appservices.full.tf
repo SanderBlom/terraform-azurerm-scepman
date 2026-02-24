@@ -12,7 +12,8 @@ resource "azurerm_windows_web_app" "app_full" {
   service_plan_id = local.service_plan_resource_id
 
   identity {
-    type = "SystemAssigned"
+    type         = local.app_service_primary_identity.type
+    identity_ids = local.app_service_primary_identity.identity_ids
   }
 
   site_config {
@@ -73,7 +74,8 @@ resource "azurerm_windows_web_app" "app_cm_full" {
   service_plan_id = local.service_plan_resource_id
 
   identity {
-    type = "SystemAssigned"
+    type         = local.app_service_certificate_master_identity.type
+    identity_ids = local.app_service_certificate_master_identity.identity_ids
   }
 
   site_config {
@@ -130,7 +132,8 @@ resource "azurerm_linux_web_app" "app_full" {
   service_plan_id = local.service_plan_resource_id
 
   identity {
-    type = "SystemAssigned"
+    type         = local.app_service_primary_identity.type
+    identity_ids = local.app_service_primary_identity.identity_ids
   }
 
   site_config {
@@ -192,7 +195,8 @@ resource "azurerm_linux_web_app" "app_cm_full" {
   service_plan_id = local.service_plan_resource_id
 
   identity {
-    type = "SystemAssigned"
+    type         = local.app_service_certificate_master_identity.type
+    identity_ids = local.app_service_certificate_master_identity.identity_ids
   }
 
   site_config {
