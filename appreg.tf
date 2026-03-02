@@ -231,10 +231,6 @@ resource "azuread_service_principal" "scepman" {
   }
 }
 
-locals {
-  scepman_api_scope = var.manage_entra_apps ? "api://${module.appreg_scepman[0].client_id}" : null
-}
-
 module "appreg_certmaster" {
   count  = var.manage_entra_apps ? 1 : 0
   source = "./modules/application_registration"
@@ -252,6 +248,65 @@ resource "azuread_service_principal" "certmaster" {
   feature_tags {
     hide = false
   }
+}
+
+locals {
+  scepman_application_id = coalesce(
+    try(one(module.appreg_scepman[*].id), null),
+    try(var.external_scepman_application.azuread_application.id, null)
+  )
+  scepman_application_object_id = coalesce(
+    try(one(module.appreg_scepman[*].object_id), null),
+    try(var.external_scepman_application.azuread_application.object_id, null)
+  )
+  scepman_application_client_id = coalesce(
+    try(one(module.appreg_scepman[*].client_id), null),
+    try(var.external_scepman_application.azuread_application.client_id, null)
+  )
+
+  scepman_service_principal_id = coalesce(
+    try(one(azuread_service_principal.scepman[*].id), null),
+    try(var.external_scepman_application.service_principal.id, null)
+  )
+  scepman_service_principal_display_name = coalesce(
+    try(one(azuread_service_principal.scepman[*].display_name), null),
+    try(var.external_scepman_application.service_principal.display_name, null)
+  )
+  scepman_service_principal_object_id = coalesce(
+    try(one(azuread_service_principal.scepman[*].object_id), null),
+    try(var.external_scepman_application.service_principal.object_id, null)
+  )
+
+  certmaster_application_id = coalesce(
+    try(one(module.appreg_certmaster[*].id), null),
+    try(var.external_certmaster_application.azuread_application.id, null)
+  )
+  certmaster_application_object_id = coalesce(
+    try(one(module.appreg_certmaster[*].object_id), null),
+    try(var.external_certmaster_application.azuread_application.object_id, null)
+  )
+  certmaster_application_client_id = coalesce(
+    try(one(module.appreg_certmaster[*].client_id), null),
+    try(var.external_certmaster_application.azuread_application.client_id, null)
+  )
+
+  certmaster_service_principal_id = coalesce(
+    try(one(azuread_service_principal.certmaster[*].id), null),
+    try(var.external_certmaster_application.service_principal.id, null)
+  )
+  certmaster_service_principal_display_name = coalesce(
+    try(one(azuread_service_principal.certmaster[*].display_name), null),
+    try(var.external_certmaster_application.service_principal.display_name, null)
+  )
+  certmaster_service_principal_object_id = coalesce(
+    try(one(azuread_service_principal.certmaster[*].object_id), null),
+    try(var.external_certmaster_application.service_principal.object_id, null)
+  )
+
+  scepman_api_scope = coalesce(
+    try(var.external_scepman_application.azuread_application.api_scope, null),
+    local.scepman_application_client_id != null ? "api://${local.scepman_application_client_id}" : null
+  )
 }
 resource "azuread_application_redirect_uris" "appreg_certmaster" {
   count          = var.manage_entra_apps ? 1 : 0

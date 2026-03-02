@@ -192,6 +192,48 @@ To re-use an existing Log Analytics Workspace that lives in another subscription
 ```
 When you supply `law_cross_subscription_details`, omit both `law_name` and `law_resource_group_name`.
 
+### External Entra app registrations
+
+If you manage Entra app registrations outside this module, set `manage_entra_apps = false` and pass the same structure as this module's outputs via:
+
+- `external_scepman_application`
+- `external_certmaster_application`
+
+Example:
+
+```hcl
+  manage_entra_apps = false
+
+  external_scepman_application = {
+    azuread_application = {
+      id        = "/applications/00000000-0000-0000-0000-000000000001"
+      object_id = "00000000-0000-0000-0000-000000000001"
+      client_id = "00000000-0000-0000-0000-000000000001"
+      api_scope = "api://00000000-0000-0000-0000-000000000001"
+    }
+    service_principal = {
+      id           = "/servicePrincipals/00000000-0000-0000-0000-000000000011"
+      object_id    = "00000000-0000-0000-0000-000000000011"
+      display_name = "SCEPman-api"
+    }
+  }
+
+  external_certmaster_application = {
+    azuread_application = {
+      id        = "/applications/00000000-0000-0000-0000-000000000002"
+      object_id = "00000000-0000-0000-0000-000000000002"
+      client_id = "00000000-0000-0000-0000-000000000002"
+    }
+    service_principal = {
+      id           = "/servicePrincipals/00000000-0000-0000-0000-000000000022"
+      object_id    = "00000000-0000-0000-0000-000000000022"
+      display_name = "SCEPman-CertMaster"
+    }
+  }
+```
+
+With this, the module injects the same auth-related app settings (`ApplicationId`, `SCEPmanAPIScope`, managed identity flags) without requiring in-module app registration creation. This lets you manage the entraID resources in a seperate repositoy where you have the correct permissions.
+
 ## Inputs
 
 | Name | Description | Type | Default | Required |

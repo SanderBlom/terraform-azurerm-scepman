@@ -60,15 +60,15 @@ output "app_services" {
 output "scepman_application" {
   value = {
     azuread_application = {
-      id        = one(module.appreg_scepman[*].id)
-      object_id = one(module.appreg_scepman[*].object_id)
-      client_id = one(module.appreg_scepman[*].client_id)
+      id        = local.scepman_application_id
+      object_id = local.scepman_application_object_id
+      client_id = local.scepman_application_client_id
       api_scope = local.scepman_api_scope
     }
     service_principal = {
-      id           = one(azuread_service_principal.scepman[*].id)
-      display_name = one(azuread_service_principal.scepman[*].display_name)
-      object_id    = one(azuread_service_principal.scepman[*].object_id)
+      id           = local.scepman_service_principal_id
+      display_name = local.scepman_service_principal_display_name
+      object_id    = local.scepman_service_principal_object_id
     }
   }
   description = "Information about the Application and Service Principal for the SCEPman API"
@@ -77,14 +77,14 @@ output "scepman_application" {
 output "certmaster_application" {
   value = {
     azuread_application = {
-      id        = try(one(module.appreg_certmaster[*].id), null)
-      object_id = try(one(module.appreg_certmaster[*].object_id), null)
-      client_id = try(one(module.appreg_certmaster[*].client_id), null)
+      id        = local.certmaster_application_id
+      object_id = local.certmaster_application_object_id
+      client_id = local.certmaster_application_client_id
     }
     service_principal = {
-      id           = try(one(azuread_service_principal.certmaster[*].id), null)
-      display_name = try(one(azuread_service_principal.certmaster[*].display_name), null)
-      object_id    = try(one(azuread_service_principal.certmaster[*].object_id), null)
+      id           = local.certmaster_service_principal_id
+      display_name = local.certmaster_service_principal_display_name
+      object_id    = local.certmaster_service_principal_object_id
     }
   }
   description = "Information about the Application and Service Principal for the SCEPman Certificate Master"

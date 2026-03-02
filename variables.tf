@@ -319,6 +319,106 @@ variable "manage_entra_apps" {
   default     = false
 }
 
+variable "external_scepman_application" {
+  type = object({
+    azuread_application = object({
+      id        = optional(string)
+      object_id = optional(string)
+      client_id = string
+      api_scope = optional(string)
+    })
+    service_principal = optional(object({
+      id           = optional(string)
+      display_name = optional(string)
+      object_id    = optional(string)
+    }))
+  })
+  description = "Optional external identity values for the SCEPman API app registration. Use this when `manage_entra_apps = false` and the app registration is managed outside this module."
+  default     = null
+
+  validation {
+    condition     = var.external_scepman_application == null || can(regex("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$", var.external_scepman_application.azuread_application.client_id))
+    error_message = "external_scepman_application.azuread_application.client_id must be a UUID."
+  }
+
+  validation {
+    condition     = var.external_scepman_application == null || try(var.external_scepman_application.azuread_application.id, null) == null || can(regex("^/applications/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$", var.external_scepman_application.azuread_application.id))
+    error_message = "If provided, external_scepman_application.azuread_application.id must match /applications/<uuid>."
+  }
+
+  validation {
+    condition     = var.external_scepman_application == null || try(var.external_scepman_application.azuread_application.object_id, null) == null || can(regex("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$", var.external_scepman_application.azuread_application.object_id))
+    error_message = "If provided, external_scepman_application.azuread_application.object_id must be a UUID."
+  }
+
+  validation {
+    condition     = var.external_scepman_application == null || try(var.external_scepman_application.azuread_application.api_scope, null) == null || can(regex("^api://.+$", var.external_scepman_application.azuread_application.api_scope))
+    error_message = "If provided, external_scepman_application.azuread_application.api_scope must start with api://."
+  }
+
+  validation {
+    condition     = var.external_scepman_application == null || try(var.external_scepman_application.service_principal.id, null) == null || can(regex("^/servicePrincipals/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$", var.external_scepman_application.service_principal.id))
+    error_message = "If provided, external_scepman_application.service_principal.id must match /servicePrincipals/<uuid>."
+  }
+
+  validation {
+    condition     = var.external_scepman_application == null || try(var.external_scepman_application.service_principal.object_id, null) == null || can(regex("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$", var.external_scepman_application.service_principal.object_id))
+    error_message = "If provided, external_scepman_application.service_principal.object_id must be a UUID."
+  }
+
+  validation {
+    condition     = var.external_scepman_application == null || try(var.external_scepman_application.service_principal.display_name, null) == null || length(trimspace(var.external_scepman_application.service_principal.display_name)) > 0
+    error_message = "If provided, external_scepman_application.service_principal.display_name must be non-empty."
+  }
+}
+
+variable "external_certmaster_application" {
+  type = object({
+    azuread_application = object({
+      id        = optional(string)
+      object_id = optional(string)
+      client_id = string
+    })
+    service_principal = optional(object({
+      id           = optional(string)
+      display_name = optional(string)
+      object_id    = optional(string)
+    }))
+  })
+  description = "Optional external identity values for the SCEPman Certificate Master app registration. Use this when `manage_entra_apps = false` and the app registration is managed outside this module."
+  default     = null
+
+  validation {
+    condition     = var.external_certmaster_application == null || can(regex("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$", var.external_certmaster_application.azuread_application.client_id))
+    error_message = "external_certmaster_application.azuread_application.client_id must be a UUID."
+  }
+
+  validation {
+    condition     = var.external_certmaster_application == null || try(var.external_certmaster_application.azuread_application.id, null) == null || can(regex("^/applications/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$", var.external_certmaster_application.azuread_application.id))
+    error_message = "If provided, external_certmaster_application.azuread_application.id must match /applications/<uuid>."
+  }
+
+  validation {
+    condition     = var.external_certmaster_application == null || try(var.external_certmaster_application.azuread_application.object_id, null) == null || can(regex("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$", var.external_certmaster_application.azuread_application.object_id))
+    error_message = "If provided, external_certmaster_application.azuread_application.object_id must be a UUID."
+  }
+
+  validation {
+    condition     = var.external_certmaster_application == null || try(var.external_certmaster_application.service_principal.id, null) == null || can(regex("^/servicePrincipals/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$", var.external_certmaster_application.service_principal.id))
+    error_message = "If provided, external_certmaster_application.service_principal.id must match /servicePrincipals/<uuid>."
+  }
+
+  validation {
+    condition     = var.external_certmaster_application == null || try(var.external_certmaster_application.service_principal.object_id, null) == null || can(regex("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$", var.external_certmaster_application.service_principal.object_id))
+    error_message = "If provided, external_certmaster_application.service_principal.object_id must be a UUID."
+  }
+
+  validation {
+    condition     = var.external_certmaster_application == null || try(var.external_certmaster_application.service_principal.display_name, null) == null || length(trimspace(var.external_certmaster_application.service_principal.display_name)) > 0
+    error_message = "If provided, external_certmaster_application.service_principal.display_name must be non-empty."
+  }
+}
+
 variable "primary_uami_ids" {
   type        = set(string)
   description = "Set of user assigned managed identity resource IDs to assign to the SCEPman primary app service. The primary app service will always have a system assigned managed identity. This setting therefore is optional and for advanced use cases where additional user assigned managed identities need to be assigned to the app service. For most use cases, this can be left empty."

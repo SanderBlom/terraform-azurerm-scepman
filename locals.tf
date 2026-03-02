@@ -80,9 +80,9 @@ locals {
     "AppConfig:KeyVaultConfig:RootCertificateConfig:Subject"         = format("CN=SCEPman-Root-CA-V1,OU=%s,O=\"%s\"", data.azurerm_client_config.current.tenant_id, var.organization_name)
   }
 
-  app_settings_primary_app = var.manage_entra_apps ? {
+  app_settings_primary_app = local.scepman_application_client_id != null ? {
     "AppConfig:CertMaster:URL"                                      = format("https://%s.azurewebsites.net", var.app_service_name_certificate_master)
-    "AppConfig:AuthConfig:ApplicationId"                            = module.appreg_scepman[0].client_id
+    "AppConfig:AuthConfig:ApplicationId"                            = local.scepman_application_client_id
     "AppConfig:AuthConfig:UseManagedIdentity"                       = "true"
     "AppConfig:AuthConfig:ManagedIdentityEnabledForWebsiteHostname" = format("%s.azurewebsites.net", var.app_service_name_primary)
     "AppConfig:AuthConfig:ManagedIdentityEnabledOnUnixTime"         = time_offset.managed_identity.unix
@@ -169,8 +169,8 @@ locals {
     "AppConfig:LoggingConfig:SharedKey"           = local.law_shared_key
   }
 
-  app_settings_certificate_master_app = var.manage_entra_apps ? {
-    "AppConfig:AuthConfig:ApplicationId"                    = module.appreg_certmaster[0].client_id
+  app_settings_certificate_master_app = local.certmaster_application_client_id != null && local.scepman_api_scope != null ? {
+    "AppConfig:AuthConfig:ApplicationId"                    = local.certmaster_application_client_id
     "AppConfig:AuthConfig:SCEPmanAPIScope"                  = local.scepman_api_scope
     "AppConfig:AuthConfig:UseManagedIdentity"               = "true"
     "AppConfig:AuthConfig:ManagedIdentityEnabledOnUnixTime" = time_offset.managed_identity.unix
