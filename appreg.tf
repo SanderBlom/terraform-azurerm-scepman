@@ -197,14 +197,18 @@ locals {
   certmaster_base_url = format("https://%s", local.default_hostname_cm)
 }
 
-data "azuread_application_published_app_ids" "well_known" {}
+data "azuread_application_published_app_ids" "well_known" {
+  count = var.manage_entra_apps ? 1 : 0
+}
 
 data "azuread_service_principal" "msgraph" {
-  client_id = data.azuread_application_published_app_ids.well_known.result["MicrosoftGraph"]
+  count     = var.manage_entra_apps ? 1 : 0
+  client_id = data.azuread_application_published_app_ids.well_known[0].result["MicrosoftGraph"]
 }
 
 data "azuread_service_principal" "intune" {
-  client_id = data.azuread_application_published_app_ids.well_known.result["InTune"]
+  count     = var.manage_entra_apps ? 1 : 0
+  client_id = data.azuread_application_published_app_ids.well_known[0].result["InTune"]
 }
 
 module "appreg_scepman" {
@@ -262,18 +266,18 @@ resource "azuread_application_redirect_uris" "appreg_certmaster" {
 resource "azuread_application_api_access" "certmaster_graph" {
   count          = var.manage_entra_apps ? 1 : 0
   application_id = module.appreg_certmaster[0].id
-  api_client_id  = data.azuread_application_published_app_ids.well_known.result["MicrosoftGraph"]
+  api_client_id  = data.azuread_application_published_app_ids.well_known[0].result["MicrosoftGraph"]
 
   scope_ids = [
-    data.azuread_service_principal.msgraph.oauth2_permission_scope_ids["User.Read"],
-    data.azuread_service_principal.msgraph.oauth2_permission_scope_ids["offline_access"],
+    data.azuread_service_principal.msgraph[0].oauth2_permission_scope_ids["User.Read"],
+    data.azuread_service_principal.msgraph[0].oauth2_permission_scope_ids["offline_access"],
   ]
 }
 
 resource "azuread_service_principal_delegated_permission_grant" "certmaster_graph" {
   count                                = var.manage_entra_apps ? 1 : 0
   service_principal_object_id          = azuread_service_principal.certmaster[0].object_id
-  resource_service_principal_object_id = data.azuread_service_principal.msgraph.object_id
+  resource_service_principal_object_id = data.azuread_service_principal.msgraph[0].object_id
   claim_values = [
     "User.Read",
     "offline_access",
@@ -284,33 +288,33 @@ resource "azuread_service_principal_delegated_permission_grant" "certmaster_grap
 
 resource "azuread_app_role_assignment" "mi_scepman_directory_read_all" {
   count               = var.manage_entra_apps ? 1 : 0
-  app_role_id         = data.azuread_service_principal.msgraph.app_role_ids["Directory.Read.All"]
+  app_role_id         = data.azuread_service_principal.msgraph[0].app_role_ids["Directory.Read.All"]
   principal_object_id = local.scepman_mi_principal_id
-  resource_object_id  = data.azuread_service_principal.msgraph.object_id
+  resource_object_id  = data.azuread_service_principal.msgraph[0].object_id
 }
 resource "azuread_app_role_assignment" "mi_scepman_device_management_config_read_all" {
   count               = var.manage_entra_apps ? 1 : 0
-  app_role_id         = data.azuread_service_principal.msgraph.app_role_ids["DeviceManagementConfiguration.Read.All"]
+  app_role_id         = data.azuread_service_principal.msgraph[0].app_role_ids["DeviceManagementConfiguration.Read.All"]
   principal_object_id = local.scepman_mi_principal_id
-  resource_object_id  = data.azuread_service_principal.msgraph.object_id
+  resource_object_id  = data.azuread_service_principal.msgraph[0].object_id
 }
 resource "azuread_app_role_assignment" "mi_scepman_device_management_managed_devices_read_all" {
   count               = var.manage_entra_apps ? 1 : 0
-  app_role_id         = data.azuread_service_principal.msgraph.app_role_ids["DeviceManagementManagedDevices.Read.All"]
+  app_role_id         = data.azuread_service_principal.msgraph[0].app_role_ids["DeviceManagementManagedDevices.Read.All"]
   principal_object_id = local.scepman_mi_principal_id
-  resource_object_id  = data.azuread_service_principal.msgraph.object_id
+  resource_object_id  = data.azuread_service_principal.msgraph[0].object_id
 }
 resource "azuread_app_role_assignment" "mi_scepman_identity_risky_user_read_all" {
   count               = var.manage_entra_apps ? 1 : 0
-  app_role_id         = data.azuread_service_principal.msgraph.app_role_ids["IdentityRiskyUser.Read.All"]
+  app_role_id         = data.azuread_service_principal.msgraph[0].app_role_ids["IdentityRiskyUser.Read.All"]
   principal_object_id = local.scepman_mi_principal_id
-  resource_object_id  = data.azuread_service_principal.msgraph.object_id
+  resource_object_id  = data.azuread_service_principal.msgraph[0].object_id
 }
 resource "azuread_app_role_assignment" "mi_scepman_intune_scep_challenge_provider" {
   count               = var.manage_entra_apps ? 1 : 0
-  app_role_id         = data.azuread_service_principal.intune.app_role_ids["scep_challenge_provider"]
+  app_role_id         = data.azuread_service_principal.intune[0].app_role_ids["scep_challenge_provider"]
   principal_object_id = local.scepman_mi_principal_id
-  resource_object_id  = data.azuread_service_principal.intune.object_id
+  resource_object_id  = data.azuread_service_principal.intune[0].object_id
 }
 
 
@@ -322,13 +326,13 @@ resource "azuread_app_role_assignment" "mi_cm_csr_request" {
 }
 resource "azuread_app_role_assignment" "mi_cm_graph_device_management_config_read_all" {
   count               = var.manage_entra_apps ? 1 : 0
-  app_role_id         = data.azuread_service_principal.msgraph.app_role_ids["DeviceManagementConfiguration.Read.All"]
+  app_role_id         = data.azuread_service_principal.msgraph[0].app_role_ids["DeviceManagementConfiguration.Read.All"]
   principal_object_id = local.cm_mi_principal_id
-  resource_object_id  = data.azuread_service_principal.msgraph.object_id
+  resource_object_id  = data.azuread_service_principal.msgraph[0].object_id
 }
 resource "azuread_app_role_assignment" "mi_cm_graph_device_management_managed_devices_read_all" {
   count               = var.manage_entra_apps ? 1 : 0
-  app_role_id         = data.azuread_service_principal.msgraph.app_role_ids["DeviceManagementManagedDevices.Read.All"]
+  app_role_id         = data.azuread_service_principal.msgraph[0].app_role_ids["DeviceManagementManagedDevices.Read.All"]
   principal_object_id = local.cm_mi_principal_id
-  resource_object_id  = data.azuread_service_principal.msgraph.object_id
+  resource_object_id  = data.azuread_service_principal.msgraph[0].object_id
 }
