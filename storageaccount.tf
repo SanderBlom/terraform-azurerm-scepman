@@ -71,6 +71,16 @@ locals {
   }
 }
 
+moved {
+  from = azurerm_role_assignment.table_contributor["0"]
+  to   = azurerm_role_assignment.table_contributor["scepman"]
+}
+
+moved {
+  from = azurerm_role_assignment.table_contributor["1"]
+  to   = azurerm_role_assignment.table_contributor["certmaster"]
+}
+
 resource "azurerm_role_assignment" "table_contributor" {
   for_each = local.object_ids
 
